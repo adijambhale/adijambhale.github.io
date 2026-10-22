@@ -1,0 +1,4 @@
+# GitHub Pages settings. The site is plain HTML, so very little is needed here.
+# README.md is the guide shown on your repository page; it isn't part of the website.
+exclude:
+  - README.md

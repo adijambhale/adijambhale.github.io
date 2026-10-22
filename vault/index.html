@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Private files</title>
+  <link rel="icon" href="../images/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400..700;1,400..700&display=swap">
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .vault > section { max-width: 40rem; }
+    #list-msg:empty { display: none; }
+    .vault h2 { margin-top: 2.25rem; }
+    [hidden] { display: none !important; }
+
+    .field { margin: 0 0 1rem; }
+    .field label { display: block; margin-bottom: 0.3rem; }
+    .field input {
+      width: 100%;
+      max-width: 22rem;
+      font: inherit;
+      color: var(--ink);
+      background: var(--paper);
+      border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+      border-radius: 4px;
+      padding: 0.5rem 0.65rem;
+    }
+
+    .btn {
+      font: inherit;
+      font-size: 0.97rem;
+      border-radius: 4px;
+      padding: 0.45rem 1rem;
+      cursor: pointer;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: var(--paper);
+    }
+    .btn:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+    .btn--quiet { background: transparent; color: var(--accent); }
+    .btn--quiet:hover { background: var(--wash); color: var(--accent-strong); }
+    .btn:disabled { opacity: 0.55; cursor: progress; }
+
+    .msg { min-height: 1.6em; margin: 0.75rem 0 0; }
+    .msg--error { color: #b3261e; }
+    @media (prefers-color-scheme: dark) { .msg--error { color: #f2a59d; } }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 0.5rem; }
+
+    .file-list { list-style: none; margin: 1rem 0 0; padding: 0; }
+    .file-list li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem 1rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--rule);
+    }
+    .file-list li > div:first-child { flex: 1 1 16rem; min-width: 0; }
+    .file-name { font-weight: 600; overflow-wrap: anywhere; }
+    .file-meta { color: var(--muted); font-size: 0.92rem; }
+    .file-actions { display: flex; align-items: center; gap: 1rem; font-size: 0.95rem; }
+
+    .dropzone {
+      display: block;
+      border: 1.5px dashed color-mix(in srgb, var(--ink) 30%, transparent);
+      border-radius: 6px;
+      background: var(--wash);
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+    }
+    .dropzone.is-over { border-color: var(--accent); }
+    .dropzone input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .dropzone:focus-within { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .dropzone strong { color: var(--accent); }
+
+    .steps { padding-left: 1.3rem; }
+    .steps li { margin-bottom: 0.4rem; }
+    .warn { color: #8a5300; }
+    @media (prefers-color-scheme: dark) { .warn { color: #f0c27a; } }
+    .fine-print { color: var(--muted); font-size: 0.92rem; margin-top: 2.5rem; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <div class="header-row">
+        <div>
+          <p class="site-name"><a href="../index.html">Aditya Jambhale</a></p>
+          <p class="site-affiliation">Private files</p>
+        </div>
+      </div>
+      <img class="trace" src="../images/trace.svg" alt="">
+    </div>
+  </header>
+
+  <main id="content">
+    <div class="wrap vault">
+
+      <!-- Locked -->
+      <section id="locked">
+        <h1 class="page-title">Private files</h1>
+        <p>Files here are encrypted in your browser and can only be opened with your password.</p>
+        <form id="unlock-form" autocomplete="on">
+          <input type="text" name="username" value="vault" autocomplete="username" hidden>
+          <div class="field">
+            <label for="pw">Password</label>
+            <input id="pw" type="password" autocomplete="current-password" required>
+          </div>
+          <div class="field" id="confirm-field" hidden>
+            <label for="pw2">Type the password again</label>
+            <input id="pw2" type="password" autocomplete="new-password">
+          </div>
+          <button class="btn" id="unlock-btn" type="submit">Unlock</button>
+          <p class="msg" id="unlock-msg" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <!-- Unlocked -->
+      <section id="unlocked" hidden>
+        <h1 class="page-title">Private files</h1>
+        <div class="toolbar">
+          <button class="btn btn--quiet" id="refresh-btn" type="button">Refresh</button>
+          <button class="btn btn--quiet" id="lock-btn" type="button">Lock</button>
+        </div>
+
+        <h2>Your files</h2>
+        <p class="msg" id="list-msg" role="status" aria-live="polite"></p>
+        <ul class="file-list" id="file-list"></ul>
+
+        <h2>Add files</h2>
+        <p>Choose files to encrypt. Nothing leaves this browser unencrypted.</p>
+        <label class="dropzone" id="dropzone">
+          <input id="picker" type="file" multiple>
+          Drop files here or <strong>choose files</strong>
+        </label>
+        <p class="msg" id="add-msg" role="status" aria-live="polite"></p>
+
+        <div id="ready" hidden>
+          <h2>Ready to upload</h2>
+          <ul class="file-list" id="ready-list"></ul>
+          <p><button class="btn" id="download-all" type="button">Download all</button></p>
+          <ol class="steps">
+            <li>Download the encrypted files above. Keep their scrambled names exactly as they are.</li>
+            <li id="upload-step">Upload them to the <code>vault/files</code> folder of your repository on GitHub, then press <em>Commit changes</em>.</li>
+            <li>Wait about a minute for GitHub to publish them, then press <em>Refresh</em>.</li>
+          </ol>
+        </div>
+
+        <p class="fine-print">There is no password reset: if you forget the password, these files can't be recovered. Anyone browsing your repository can see that encrypted files exist, but not their names or contents.</p>
+      </section>
+
+    </div>
+  </main>
+
+<script>
+'use strict';
+
+/* ---------------- Settings ----------------
+   The page works out your GitHub username and repository from its address
+   (yourname.github.io). Fill these in only if you use a custom domain.     */
+const CONFIG = {
+  owner: '',                 // e.g. 'adityajambhale'
+  repo: '',                  // e.g. 'adityajambhale.github.io'
+  branch: 'main',
+  folder: 'vault/files',     // where the encrypted files live in the repository
+  localPrefix: 'files/',     // the same folder, relative to this page
+  salt: '38ced88b0377eb8dd294f232d57dbcd5',   // not secret; keep it unchanged
+  iterations: 600000,
+};
+
+/* ---------------- Crypto helpers ---------------- */
+const enc = s => new TextEncoder().encode(s);
+const dec = b => new TextDecoder().decode(b);
+const MAGIC = enc('AJV1');
+const AAD_NAME = enc('vault-name-v1');
+const AAD_FILE = enc('vault-file-v1');
+const NAME_RE = /^f[A-Za-z0-9_-]{40,}\.vault$/;
+const MAX_NAME_BYTES = 80;
+const GITHUB_WEB_UPLOAD_LIMIT = 25 * 1024 * 1024;
+const subtle = window.crypto && window.crypto.subtle;
+
+function hexToBytes(hex) {
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return out;
+}
+function concat(...parts) {
+  const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+  let o = 0;
+  for (const p of parts) { out.set(p, o); o += p.length; }
+  return out;
+}
+function toB64url(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function fromB64url(str) {
+  const s = str.replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(s + '='.repeat((4 - s.length % 4) % 4));
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function truncateUtf8(str, maxBytes) {
+  if (enc(str).length <= maxBytes) return str;
+  const dot = str.lastIndexOf('.');
+  const ext = dot > 0 && str.length - dot <= 10 ? str.slice(dot) : '';
+  let base = Array.from(ext ? str.slice(0, dot) : str);
+  while (base.length && enc(base.join('') + '…' + ext).length > maxBytes) base.pop();
+  return base.join('') + '…' + ext;
+}
+
+async function deriveKey(password) {
+  const base = await subtle.importKey('raw', enc(password), 'PBKDF2', false, ['deriveKey']);
+  return subtle.deriveKey(
+    { name: 'PBKDF2', salt: hexToBytes(CONFIG.salt), iterations: CONFIG.iterations, hash: 'SHA-256' },
+    base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+
+async function encryptName(key, info) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await subtle.encrypt({ name: 'AES-GCM', iv, additionalData: AAD_NAME }, key, enc(JSON.stringify(info))));
+  return 'f' + toB64url(concat(iv, ct)) + '.vault';
+}
+
+async function decryptName(key, filename) {
+  if (!NAME_RE.test(filename)) return null;
+  try {
+    const bytes = fromB64url(filename.slice(1, -'.vault'.length));
+    const pt = await subtle.decrypt({ name: 'AES-GCM', iv: bytes.slice(0, 12), additionalData: AAD_NAME }, key, bytes.slice(12));
+    return JSON.parse(dec(pt));
+  } catch (e) {
+    return null;
+  }
+}
+
+async function encryptFile(key, file) {
+  const data = new Uint8Array(await file.arrayBuffer());
+  const added = Date.now();
+  const meta = enc(JSON.stringify({ name: file.name, type: file.type || '', size: file.size, modified: file.lastModified || null, added }));
+  const len = new Uint8Array(4);
+  new DataView(len.buffer).setUint32(0, meta.length);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await subtle.encrypt({ name: 'AES-GCM', iv, additionalData: AAD_FILE }, key, concat(len, meta, data)));
+  const blob = new Blob([MAGIC, iv, ct], { type: 'application/octet-stream' });
+  const filename = await encryptName(key, { n: truncateUtf8(file.name, MAX_NAME_BYTES), s: file.size, d: added });
+  return { filename, blob, name: file.name };
+}
+
+async function decryptFile(key, bytes) {
+  const ok = bytes.length > 32 && MAGIC.every((b, i) => bytes[i] === b);
+  if (!ok) throw new Error('That file is not a vault file.');
+  let pt;
+  try {
+    pt = new Uint8Array(await subtle.decrypt({ name: 'AES-GCM', iv: bytes.slice(4, 16), additionalData: AAD_FILE }, key, bytes.slice(16)));
+  } catch (e) {
+    throw new Error('That file could not be decrypted with this password.');
+  }
+  const n = new DataView(pt.buffer, pt.byteOffset, pt.byteLength).getUint32(0);
+  const meta = JSON.parse(dec(pt.subarray(4, 4 + n)));
+  return { meta, data: pt.subarray(4 + n) };
+}
+
+/* ---------------- GitHub ---------------- */
+function detectRepo() {
+  if (CONFIG.owner && CONFIG.repo) return { owner: CONFIG.owner, repo: CONFIG.repo };
+  const m = location.hostname.match(/^([A-Za-z0-9-]+)\.github\.io$/i);
+  if (!m) return null;
+  const owner = CONFIG.owner || m[1];
+  const segs = location.pathname.split('/').filter(Boolean);
+  const i = segs.indexOf('vault');
+  return { owner, repo: CONFIG.repo || (i > 0 ? segs[0] : m[1] + '.github.io') };
+}
+
+async function listFiles() {
+  const repo = detectRepo();
+  if (!repo) {
+    return { ok: false, repo, error: 'Your file list only loads on your published site (yourname.github.io/vault/).' };
+  }
+  const url = `https://api.github.com/repos/${repo.owner}/${repo.repo}/contents/${CONFIG.folder}?ref=${encodeURIComponent(CONFIG.branch)}`;
+  let r;
+  try {
+    r = await fetch(url, { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store' });
+  } catch (e) {
+    return { ok: false, repo, error: "Couldn't reach GitHub to load your file list. Check your connection." };
+  }
+  if (r.status === 404) return { ok: false, repo, error: `Couldn't find the folder ${CONFIG.folder} in ${repo.owner}/${repo.repo}.` };
+  if (r.status === 403 || r.status === 429) return { ok: false, repo, error: 'GitHub allows 60 file-list loads an hour from one network, and that limit has been reached. Try again later.' };
+  if (!r.ok) return { ok: false, repo, error: `GitHub returned error ${r.status} while loading your file list.` };
+  const items = await r.json();
+  if (!Array.isArray(items)) return { ok: false, repo, error: `${CONFIG.folder} is not a folder.` };
+  return { ok: true, repo, files: items.filter(it => it.type === 'file' && NAME_RE.test(it.name)) };
+}
+
+async function fetchEncrypted(entry) {
+  const urls = [CONFIG.localPrefix + encodeURIComponent(entry.name)];
+  if (entry.download_url) urls.push(entry.download_url);
+  for (const u of urls) {
+    try {
+      const r = await fetch(u, { cache: 'no-store' });
+      if (r.ok) return new Uint8Array(await r.arrayBuffer());
+    } catch (e) { /* try the next address */ }
+  }
+  throw new Error("Couldn't download that file. If you uploaded it in the last minute, wait and press Refresh.");
+}
+
+/* ---------------- Page state ---------------- */
+const $ = id => document.getElementById(id);
+let key = null;
+let repo = null;
+let needConfirm = false;
+let ready = [];
+
+function say(el, text, isError) {
+  el.textContent = text || '';
+  el.classList.toggle('msg--error', !!isError);
+}
+function formatSize(n) {
+  if (n < 1024) return n + ' bytes';
+  if (n < 1024 * 1024) return (n / 1024).toFixed(n < 10240 ? 1 : 0) + ' KB';
+  return (n / 1024 / 1024).toFixed(1) + ' MB';
+}
+function formatDate(ms) {
+  return new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+function saveBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+function githubFileUrl(name) {
+  return repo ? `https://github.com/${repo.owner}/${repo.repo}/blob/${CONFIG.branch}/${CONFIG.folder}/${encodeURIComponent(name)}` : null;
+}
+
+async function decodeAll(k, files) {
+  const metas = await Promise.all(files.map(f => decryptName(k, f.name)));
+  const mine = [];
+  files.forEach((f, i) => { if (metas[i]) mine.push({ entry: f, info: metas[i] }); });
+  mine.sort((a, b) => (b.info.d || 0) - (a.info.d || 0));
+  return { mine, others: files.length - mine.length };
+}
+
+function renderFiles(result, warning) {
+  const list = $('file-list');
+  list.replaceChildren();
+  if (!result) { say($('list-msg'), warning, true); return; }
+  const notes = [];
+  if (result.mine.length === 0) notes.push('No files yet. Add your first one below.');
+  if (result.others) notes.push(`${result.others} file${result.others > 1 ? 's were' : ' was'} encrypted with a different password and ${result.others > 1 ? 'are' : 'is'} not shown.`);
+  say($('list-msg'), notes.join(' '));
+
+  for (const { entry, info } of result.mine) {
+    const li = document.createElement('li');
+    const left = document.createElement('div');
+    const name = document.createElement('div');
+    name.className = 'file-name';
+    name.textContent = info.n;
+    const meta = document.createElement('div');
+    meta.className = 'file-meta';
+    meta.textContent = `${formatSize(info.s)}, added ${formatDate(info.d)}`;
+    left.append(name, meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'file-actions';
+    const btn = document.createElement('button');
+    btn.className = 'btn btn--quiet';
+    btn.type = 'button';
+    btn.textContent = 'Download';
+    btn.addEventListener('click', () => downloadEntry(entry, btn));
+    actions.append(btn);
+    const gh = githubFileUrl(entry.name);
+    if (gh) {
+      const del = document.createElement('a');
+      del.href = gh;
+      del.target = '_blank';
+      del.rel = 'noopener';
+      del.textContent = 'Delete on GitHub';
+      del.title = 'Opens the encrypted file on GitHub, where you can delete it';
+      actions.append(del);
+    }
+    li.append(left, actions);
+    list.append(li);
+  }
+}
+
+async function downloadEntry(entry, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Decrypting…';
+  try {
+    const bytes = await fetchEncrypted(entry);
+    const { meta, data } = await decryptFile(key, bytes);
+    saveBlob(new Blob([data], { type: meta.type || 'application/octet-stream' }), meta.name);
+  } catch (e) {
+    say($('list-msg'), e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Download';
+  }
+}
+
+function showConfirm(text, isError) {
+  needConfirm = true;
+  $('confirm-field').hidden = false;
+  say($('unlock-msg'), text, isError);
+  $('pw2').focus();
+}
+
+function showUnlocked(result, warning) {
+  $('locked').hidden = true;
+  $('unlocked').hidden = false;
+  const step = $('upload-step');
+  if (repo) {
+    const link = `https://github.com/${repo.owner}/${repo.repo}/upload/${CONFIG.branch}/${CONFIG.folder}`;
+    step.innerHTML = `Upload them to the <code>${CONFIG.folder}</code> folder: <a href="${link}" target="_blank" rel="noopener">open the upload page on GitHub</a>, drag the files in, then press <em>Commit changes</em>.`;
+  }
+  renderFiles(result, warning);
+}
+
+$('unlock-form').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const msg = $('unlock-msg');
+  if (!subtle) { say(msg, 'This browser cannot do the encryption this page needs. Open the page over https in an up-to-date browser.', true); return; }
+  const pw = $('pw').value.normalize('NFC');
+  if (!pw) return;
+  if (needConfirm && $('pw2').value.normalize('NFC') !== pw) { say(msg, "The two passwords don't match.", true); return; }
+
+  const btn = $('unlock-btn');
+  btn.disabled = true;
+  say(msg, 'Unlocking…');
+  try {
+    const [k, listing] = await Promise.all([deriveKey(pw), listFiles()]);
+    repo = listing.repo;
+
+    if (listing.ok && listing.files.length > 0) {
+      const result = await decodeAll(k, listing.files);
+      if (result.mine.length === 0) { say(msg, "That password doesn't match the files in your vault.", true); return; }
+      key = k;
+      showUnlocked(result);
+      return;
+    }
+
+    // Nothing to check the password against (empty vault, or the list couldn't load):
+    // ask for it twice so a typo can't lock files away.
+    if (listing.ok && pw.length < 10) {
+      showConfirm('Your vault is empty, so this password will become its password. Use at least 10 characters; a few random words work well.', true);
+      return;
+    }
+    if (!needConfirm) {
+      showConfirm(listing.ok
+        ? 'Your vault is empty, so this password will become its password. Type it again to confirm.'
+        : listing.error + ' You can still encrypt new files: type your password again to confirm it.');
+      return;
+    }
+    key = k;
+    showUnlocked(listing.ok ? { mine: [], others: 0 } : null, listing.ok ? '' : listing.error);
+  } catch (e) {
+    say(msg, 'Something went wrong while unlocking: ' + e.message, true);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$('refresh-btn').addEventListener('click', async () => {
+  const btn = $('refresh-btn');
+  btn.disabled = true;
+  say($('list-msg'), 'Loading…');
+  try {
+    const listing = await listFiles();
+    repo = listing.repo;
+    if (!listing.ok) { renderFiles(null, listing.error); return; }
+    renderFiles(await decodeAll(key, listing.files));
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$('lock-btn').addEventListener('click', () => location.reload());
+
+function renderReady() {
+  const list = $('ready-list');
+  list.replaceChildren();
+  for (const item of ready) {
+    const li = document.createElement('li');
+    const left = document.createElement('div');
+    const name = document.createElement('div');
+    name.className = 'file-name';
+    name.textContent = item.name;
+    const meta = document.createElement('div');
+    meta.className = 'file-meta';
+    meta.textContent = `Encrypted, ${formatSize(item.blob.size)}`;
+    if (item.blob.size > GITHUB_WEB_UPLOAD_LIMIT) {
+      const w = document.createElement('div');
+      w.className = 'warn';
+      w.textContent = "Over 25 MB, which is too large to upload through GitHub's website.";
+      meta.append(w);
+    }
+    left.append(name, meta);
+    const btn = document.createElement('button');
+    btn.className = 'btn btn--quiet';
+    btn.type = 'button';
+    btn.textContent = 'Download';
+    btn.addEventListener('click', () => saveBlob(item.blob, item.filename));
+    li.append(left, btn);
+    list.append(li);
+  }
+  $('ready').hidden = ready.length === 0;
+  $('download-all').hidden = ready.length < 2;
+}
+
+async function addFiles(files) {
+  const msg = $('add-msg');
+  for (const f of files) {
+    say(msg, `Encrypting ${f.name}…`);
+    try {
+      ready.push(await encryptFile(key, f));
+      renderReady();
+    } catch (e) {
+      say(msg, `Couldn't encrypt ${f.name}: ${e.message}`, true);
+      return;
+    }
+  }
+  say(msg, files.length ? 'Encrypted. Now follow the three steps below.' : '');
+}
+
+$('picker').addEventListener('change', (ev) => {
+  addFiles(Array.from(ev.target.files));
+  ev.target.value = '';
+});
+const dz = $('dropzone');
+['dragenter', 'dragover'].forEach(t => dz.addEventListener(t, (ev) => { ev.preventDefault(); dz.classList.add('is-over'); }));
+['dragleave', 'drop'].forEach(t => dz.addEventListener(t, () => dz.classList.remove('is-over')));
+dz.addEventListener('drop', (ev) => {
+  ev.preventDefault();
+  addFiles(Array.from(ev.dataTransfer.files));
+});
+
+$('download-all').addEventListener('click', async () => {
+  for (const item of ready) {
+    saveBlob(item.blob, item.filename);
+    await new Promise(r => setTimeout(r, 500));
+  }
+});
+</script>
+</body>
+</html>

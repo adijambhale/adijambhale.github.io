@@ -43,7 +43,7 @@
     var m = /[?&]nu=([0-9]*\.?[0-9]+)/.exec(window.location.search);
     var forced = m ? parseFloat(m[1]) : NaN;
     if (forced >= 0 && forced <= 10) return forced;
-    return 2 * Math.random();
+    return 5 * Math.random();
   }
 
   // Values of one sample path at n equally spaced points of [0, 1].

@@ -98,6 +98,7 @@
     var NS = 'http://www.w3.org/2000/svg';
     var svg = document.createElementNS(NS, 'svg');
     svg.setAttribute('class', img.getAttribute('class'));
+    svg.classList.add('trace--draw');
     svg.setAttribute('viewBox', '0 0 1000 ' + HEIGHT);
     svg.setAttribute('preserveAspectRatio', 'none');
     svg.setAttribute('aria-hidden', 'true');

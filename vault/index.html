@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>Private files</title>
-  <link rel="icon" href="../images/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="../images/favicon.svg?v=2" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400..700;1,400..700&display=swap">
   <link rel="stylesheet" href="../style.css">
-  <script src="trace.js"></script>
+  <script src="../trace.js"></script>
   <style>
     .vault > section { max-width: 40rem; }
     #list-msg:empty { display: none; }
@@ -36,18 +36,17 @@
       border-radius: 4px;
       padding: 0.45rem 1rem;
       cursor: pointer;
-      border: 1px solid var(--accent);
-      background: var(--accent);
-      color: var(--paper);
+      border: 1px solid var(--accent-fill);
+      background: var(--accent-fill);
+      color: var(--on-accent);
     }
-    .btn:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
-    .btn--quiet { background: transparent; color: var(--accent); }
-    .btn--quiet:hover { background: var(--wash); color: var(--accent-strong); }
+    .btn:hover { background: var(--accent-fill-hover); border-color: var(--accent-fill-hover); }
+    .btn--quiet { background: transparent; color: var(--accent-ink); border-color: var(--accent); }
+    .btn--quiet:hover { background: var(--wash); color: var(--accent-strong); border-color: var(--accent); }
     .btn:disabled { opacity: 0.55; cursor: progress; }
 
     .msg { min-height: 1.6em; margin: 0.75rem 0 0; }
-    .msg--error { color: #b3261e; }
-    @media (prefers-color-scheme: dark) { .msg--error { color: #f2a59d; } }
+    .msg--error { color: var(--error); }
 
     .toolbar { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 0.5rem; }
 
@@ -78,13 +77,12 @@
     }
     .dropzone.is-over { border-color: var(--accent); }
     .dropzone input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-    .dropzone:focus-within { outline: 2px solid var(--accent); outline-offset: 3px; }
-    .dropzone strong { color: var(--accent); }
+    .dropzone:focus-within { outline: 2px solid var(--accent-ink); outline-offset: 3px; }
+    .dropzone strong { color: var(--accent-ink); }
 
     .steps { padding-left: 1.3rem; }
     .steps li { margin-bottom: 0.4rem; }
-    .warn { color: #8a5300; }
-    @media (prefers-color-scheme: dark) { .warn { color: #f0c27a; } }
+    .warn { color: var(--error); }
     .fine-print { color: var(--muted); font-size: 0.92rem; margin-top: 2.5rem; }
   </style>
 </head>
